@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { MonzoTransaction } from '@/types/monzo'
 
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string
+if (!CLIENT_ID) throw new Error('VITE_GOOGLE_CLIENT_ID is not set')
+
 interface SheetsApiResponse {
   values?: string[][]
 }
@@ -87,45 +90,84 @@ export function useGoogleSheets() {
     }
   }
 
+  // Fix 3: store handleTokenResponse in a ref to avoid stale closure in initTokenClient
+  const handleTokenResponseRef = useRef(handleTokenResponse)
+  handleTokenResponseRef.current = handleTokenResponse
+
   function initTokenClient(): void {
     const oauth2 = getOauth2()
     if (!oauth2) return
     tokenClientRef.current = oauth2.initTokenClient({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID as string,
+      client_id: CLIENT_ID,
       scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
-      callback: handleTokenResponse,
+      // Fix 3: indirection so the latest handleTokenResponse is always called
+      callback: (r) => {
+        handleTokenResponseRef.current(r)
+      },
     })
   }
 
   useEffect(() => {
     if (scriptLoadingRef.current) return
 
+    // Fix 4: track whether this effect invocation injected the script and whether it was cancelled
+    let injected = false
+    let cancelled = false
+
     const existingScript = document.querySelector(
       'script[src="https://accounts.google.com/gsi/client"]',
     )
 
     if (existingScript) {
-      // Script already present — initialise token client immediately if GIS is ready
-      initTokenClient()
+      // Fix 1: only call initTokenClient immediately if window.google is already available;
+      // otherwise attach a load listener to the existing (still-loading) script element.
+      if (getOauth2()) {
+        initTokenClient()
+      } else {
+        const onLoad = () => {
+          if (!cancelled) initTokenClient()
+        }
+        existingScript.addEventListener('load', onLoad)
+        return () => {
+          cancelled = true
+          existingScript.removeEventListener('load', onLoad)
+        }
+      }
       return
     }
 
     scriptLoadingRef.current = true
+    injected = true
     const script = document.createElement('script')
     script.src = 'https://accounts.google.com/gsi/client'
     script.async = true
     script.defer = true
     script.onload = () => {
-      initTokenClient()
+      if (!cancelled) initTokenClient()
     }
     document.head.appendChild(script)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Fix 4: cleanup — prevent initTokenClient from running and remove the injected script
+    return () => {
+      cancelled = true
+      if (injected) {
+        document.head.removeChild(script)
+        scriptLoadingRef.current = false
+      }
+    }
+  }, [])
 
   function signIn(spreadsheetId: string): void {
     setLoading(true)
     setError(null)
+    // Fix 2: guard against tokenClient not being ready
+    if (!tokenClientRef.current) {
+      setError('Google sign-in is not ready yet. Please try again.')
+      setLoading(false)
+      return
+    }
     pendingSpreadsheetIdRef.current = spreadsheetId
-    tokenClientRef.current?.requestAccessToken()
+    tokenClientRef.current.requestAccessToken()
   }
 
   return { signIn, data, loading, error }

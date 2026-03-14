@@ -20,7 +20,7 @@ interface TokenClient {
 
 declare global {
   interface Window {
-    google: {
+    google?: {
       accounts: {
         oauth2: {
           initTokenClient(config: TokenClientConfig): TokenClient;
