@@ -5,17 +5,24 @@ import { Label } from '@/components/ui/label';
 
 interface SheetUrlInputProps {
   onIdChange: (id: string | null) => void;
+  value?: string;
 }
 
-const SPREADSHEET_ID_REGEX = /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/;
+const SPREADSHEET_ID_REGEX = /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)(?:[/?#]|$)/;
 
-function SheetUrlInput({ onIdChange }: SheetUrlInputProps) {
-  const [value, setValue] = React.useState('');
+function SheetUrlInput({ onIdChange, value }: SheetUrlInputProps) {
+  const [inputValue, setInputValue] = React.useState('');
   const [extractedId, setExtractedId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (value !== undefined) {
+      setInputValue(value);
+    }
+  }, [value]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const input = e.target.value;
-    setValue(input);
+    setInputValue(input);
 
     if (input === '') {
       setExtractedId(null);
@@ -34,7 +41,7 @@ function SheetUrlInput({ onIdChange }: SheetUrlInputProps) {
     }
   }
 
-  const showError = value !== '' && extractedId === null;
+  const showError = inputValue !== '' && extractedId === null;
   const showSuccess = extractedId !== null;
 
   return (
@@ -43,13 +50,18 @@ function SheetUrlInput({ onIdChange }: SheetUrlInputProps) {
       <Input
         id="sheet-url-input"
         type="url"
-        value={value}
+        value={inputValue}
         onChange={handleChange}
         placeholder="https://docs.google.com/spreadsheets/d/..."
+        aria-describedby="sheet-url-feedback"
       />
-      {showError && <p className="text-sm text-red-500">Invalid Google Sheets URL</p>}
+      {showError && (
+        <p id="sheet-url-feedback" className="text-sm text-red-500" role="alert">
+          Invalid Google Sheets URL
+        </p>
+      )}
       {showSuccess && (
-        <p className="text-sm text-green-600">
+        <p id="sheet-url-feedback" className="text-sm text-green-600">
           Sheet ID: {extractedId}
         </p>
       )}
