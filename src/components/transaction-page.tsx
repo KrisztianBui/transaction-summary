@@ -10,7 +10,7 @@ function TransactionPage() {
   const { signIn, data, loading, error } = useGoogleSheets();
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <main className="flex flex-col gap-4 p-6">
       <h1 className="text-2xl font-semibold">Monzo Transactions</h1>
       <SheetUrlInput onIdChange={setSheetId} />
       <ConnectButton
@@ -26,7 +26,7 @@ function TransactionPage() {
         </p>
       )}
       {data !== null && <TransactionTable transactions={data} />}
-    </div>
+    </main>
   );
 }
 

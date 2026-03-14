@@ -160,6 +160,7 @@ export function useGoogleSheets() {
   function signIn(spreadsheetId: string): void {
     setLoading(true)
     setError(null)
+    setData(null)
     // Fix 2: guard against tokenClient not being ready
     if (!tokenClientRef.current) {
       setError('Google sign-in is not ready yet. Please try again.')
