@@ -10,7 +10,7 @@ export interface MonzoTransaction {
   currency: string;
   localAmount: string;
   localCurrency: string;
-  notesAndTags: string;
+  notes: string;
   address: string;
   receipt: string;
   description: string;
