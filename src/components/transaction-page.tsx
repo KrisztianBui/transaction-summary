@@ -3,11 +3,12 @@ import { useState } from 'react';
 import { ConnectButton } from '@/components/connect-button';
 import { SheetUrlInput } from '@/components/sheet-url-input';
 import { TransactionTable } from '@/components/transaction-table';
+import { Button } from '@/components/ui/button';
 import { useGoogleSheets } from '@/hooks/use-google-sheets';
 
 function TransactionPage() {
   const [sheetId, setSheetId] = useState<string | null>(null);
-  const { signIn, data, loading, error } = useGoogleSheets();
+  const { signIn, signOut, data, loading, error } = useGoogleSheets();
 
   return (
     <main className="flex flex-col gap-4 p-6">
@@ -20,6 +21,11 @@ function TransactionPage() {
         loading={loading}
         disabled={sheetId === null}
       />
+      {data !== null && (
+        <Button variant="outline" onClick={signOut}>
+          Disconnect
+        </Button>
+      )}
       {error !== null && (
         <p className="text-sm text-red-500" role="alert">
           {error}

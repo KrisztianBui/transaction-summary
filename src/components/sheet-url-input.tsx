@@ -55,16 +55,16 @@ function SheetUrlInput({ onIdChange, value }: SheetUrlInputProps) {
         placeholder="https://docs.google.com/spreadsheets/d/..."
         aria-describedby="sheet-url-feedback"
       />
-      {showError && (
-        <p id="sheet-url-feedback" className="text-sm text-red-500" role="alert">
-          Invalid Google Sheets URL
-        </p>
-      )}
-      {showSuccess && (
-        <p id="sheet-url-feedback" className="text-sm text-green-600">
-          Sheet ID: {extractedId}
-        </p>
-      )}
+      <div id="sheet-url-feedback">
+        {showError && (
+          <p className="text-sm text-red-500" role="alert">
+            Invalid Google Sheets URL
+          </p>
+        )}
+        {showSuccess && (
+          <p className="text-sm text-green-600">Sheet ID: {extractedId}</p>
+        )}
+      </div>
     </div>
   );
 }

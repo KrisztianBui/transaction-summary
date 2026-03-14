@@ -10,7 +10,11 @@ interface ConnectButtonProps {
 
 function ConnectButton({ onConnect, loading, disabled }: ConnectButtonProps) {
   return (
-    <Button onClick={onConnect} disabled={disabled || loading} aria-busy={loading}>
+    <Button
+      onClick={onConnect}
+      disabled={disabled || loading}
+      aria-busy={loading}
+    >
       {loading ? (
         <>
           <Loader2 className="animate-spin" />

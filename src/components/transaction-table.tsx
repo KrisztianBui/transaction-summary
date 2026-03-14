@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { MonzoTransaction } from '@/types/monzo';
+import type { MonzoTransaction } from '@/types/monzo';
 
 interface TransactionTableProps {
   transactions: MonzoTransaction[];
@@ -37,8 +37,8 @@ function TransactionTable({ transactions }: TransactionTableProps) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {transactions.map((transaction) => (
-          <TableRow key={transaction.transactionId}>
+        {transactions.map((transaction, index) => (
+          <TableRow key={transaction.transactionId || index}>
             {COLUMNS.map((col) => (
               <TableCell key={col.key}>{transaction[col.key]}</TableCell>
             ))}
