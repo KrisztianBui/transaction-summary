@@ -8,6 +8,10 @@ interface SheetsApiResponse {
   values?: string[][];
 }
 
+interface SpreadsheetMetadata {
+  sheets: { properties: { title: string } }[];
+}
+
 interface Oauth2Api {
   initTokenClient: (config: TokenClientConfig) => TokenClient;
   revoke: (token: string, callback: () => void) => void;
@@ -61,21 +65,30 @@ export function useGoogleSheets() {
     spreadsheetId: string,
     token: string
   ): Promise<void> {
-    try {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/Sheet1`;
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}`;
+    const headers = { Authorization: `Bearer ${token}` };
 
-      if (!response.ok) {
-        setError(
-          `Failed to fetch sheet: ${response.status} ${response.statusText}`
-        );
-        setLoading(false);
+    try {
+      // Fetch spreadsheet metadata to get the actual first sheet name
+      const metaResponse = await fetch(`${baseUrl}?fields=sheets.properties.title`, { headers });
+      if (!metaResponse.ok) {
+        setError(`Failed to fetch sheet: ${metaResponse.status} ${metaResponse.statusText}`);
+        return;
+      }
+      const meta = (await metaResponse.json()) as SpreadsheetMetadata;
+      const sheetName = meta.sheets[meta.sheets.length - 1]?.properties.title ?? 'Sheet1';
+
+      const valuesResponse = await fetch(
+        `${baseUrl}/values/${encodeURIComponent(sheetName)}`,
+        { headers }
+      );
+
+      if (!valuesResponse.ok) {
+        setError(`Failed to fetch sheet: ${valuesResponse.status} ${valuesResponse.statusText}`);
         return;
       }
 
-      const json = (await response.json()) as SheetsApiResponse;
+      const json = (await valuesResponse.json()) as SheetsApiResponse;
       const rows = json.values ?? [];
       // Skip row 0 (header row)
       const transactions = rows.slice(1).map(rowToTransaction);
