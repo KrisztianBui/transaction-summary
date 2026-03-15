@@ -187,7 +187,7 @@ interface TransactionSummary {
 | Context | Format |
 |---|---|
 | `MonzoTransaction.date` | `DD/MM/YYYY` |
-| `dateRange` prop | `DD/MM/YYYY` |
+| `dateRange` prop | `YYYY-MM-DD` (ISO) |
 | Native `<input type="date">` | `YYYY-MM-DD` |
 | `byMonth` keys | `YYYY-MM` |
 
@@ -232,9 +232,10 @@ Nav links: Overview, Categories, Trends, Budgets, Transactions. Settings at bott
 ### Categories (`/categories`)
 
 - **Picker state:** `{ mode: 'month'|'range'; month: string; from: string; to: string }`
-  - Default: `mode='month'`, `month` = current calendar month `YYYY-MM`
+  - Default: `mode='month'`, `month` = current calendar month `YYYY-MM`, `from: ''`, `to: ''`
+  - `from` and `to` are always `YYYY-MM-DD` ISO strings (or `''` when not set)
 - Month mode: filter `transactions` where `monthKey(date) === month`
-- Range mode: filter where `monzoToIso(date) >= from && monzoToIso(date) <= to` (inclusive); missing bound = unbounded. Inputs are `<input type="date">` (YYYY-MM-DD); stored as-is in state for ISO comparison
+- Range mode: filter where `monzoToIso(transaction.date) >= from && monzoToIso(transaction.date) <= to` (inclusive string comparison; both sides are ISO). A missing bound is detected as `''` and treated as unbounded (skip that side of the comparison)
 - **Bar chart:** `moneyOut` per category for filtered set, computed inline
 - **Drill-down:** `useState<string|null>`; one category at a time; click same to collapse; resets on unmount; shows date/name/moneyOut list
 
@@ -265,13 +266,13 @@ interface TransactionTableProps {
   transactions: MonzoTransaction[];
   searchQuery?: string           // substring on `name`, case-insensitive
   categoryFilter?: string        // exact `category` match; '' or undefined = all
-  dateRange?: { from: string; to: string } | null  // DD/MM/YYYY; compare via monzoToIso
+  dateRange?: { from: string; to: string } | null  // YYYY-MM-DD (ISO); filter: monzoToIso(transaction.date) >= from && <= to; '' = unbounded
 }
 ```
 
 Filtering inside `TransactionTable` before rendering rows.
 
-Above table: search `Input`, category `Select` (from `allCategories` + "All"), from/to `<input type="date">` converted via `isoToMonzo` before storing in `dateRange` state.
+Above table: search `Input`, category `Select` (from `allCategories` + "All"), from/to `<input type="date">` (native YYYY-MM-DD values stored directly in `dateRange` state — no conversion).
 
 Filter state local to `/transactions` page component.
 
