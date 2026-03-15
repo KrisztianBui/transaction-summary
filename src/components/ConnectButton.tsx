@@ -8,23 +8,19 @@ interface ConnectButtonProps {
   disabled: boolean;
 }
 
-function ConnectButton({ onConnect, loading, disabled }: ConnectButtonProps) {
-  return (
-    <Button
-      onClick={onConnect}
-      disabled={disabled || loading}
-      aria-busy={loading}
-    >
-      {loading ? (
-        <>
-          <Loader2 className="animate-spin" />
-          Connecting...
-        </>
-      ) : (
-        'Connect to Google Sheets'
-      )}
-    </Button>
-  );
-}
-
-export { ConnectButton };
+export const ConnectButton = ({ onConnect, loading, disabled }: ConnectButtonProps) => (
+  <Button
+    onClick={onConnect}
+    disabled={disabled || loading}
+    aria-busy={loading}
+  >
+    {loading ? (
+      <>
+        <Loader2 className="animate-spin" />
+        Connecting...
+      </>
+    ) : (
+      'Connect to Google Sheets'
+    )}
+  </Button>
+);

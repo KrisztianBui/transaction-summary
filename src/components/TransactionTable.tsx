@@ -22,7 +22,7 @@ const COLUMNS: { label: string; key: keyof MonzoTransaction }[] = [
   { label: 'Money In', key: 'moneyIn' },
 ];
 
-function TransactionTable({ transactions }: TransactionTableProps) {
+export const TransactionTable = ({ transactions }: TransactionTableProps) => {
   if (transactions.length === 0) {
     return <p>No transactions found.</p>;
   }
@@ -49,4 +49,3 @@ function TransactionTable({ transactions }: TransactionTableProps) {
   );
 }
 
-export { TransactionTable };

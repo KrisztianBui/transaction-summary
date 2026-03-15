@@ -6,7 +6,7 @@ import { TransactionTable } from '@/components/TransactionTable';
 import { Button } from '@/components/ui/button';
 import { useGoogleSheets } from '@/hooks/useGoogleSheets';
 
-function TransactionPage() {
+export const TransactionPage = () => {
   const [sheetId, setSheetId] = useState<string | null>(null);
   const { signIn, signOut, data, loading, error } = useGoogleSheets();
 
@@ -36,4 +36,3 @@ function TransactionPage() {
   );
 }
 
-export { TransactionPage };

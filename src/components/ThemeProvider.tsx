@@ -77,13 +77,13 @@ function isEditableTarget(target: EventTarget | null) {
   return false;
 }
 
-export function ThemeProvider({
+export const ThemeProvider = ({
   children,
   defaultTheme = 'system',
   storageKey = 'theme',
   disableTransitionOnChange = true,
   ...props
-}: ThemeProviderProps) {
+}: ThemeProviderProps) => {
   const [theme, setThemeState] = React.useState<Theme>(() => {
     const storedTheme = localStorage.getItem(storageKey);
     if (isTheme(storedTheme)) {

@@ -10,7 +10,7 @@ interface SheetUrlInputProps {
 
 const SPREADSHEET_ID_REGEX = /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)(?:[/?#]|$)/;
 
-function SheetUrlInput({ onIdChange, value }: SheetUrlInputProps) {
+export const SheetUrlInput = ({ onIdChange, value }: SheetUrlInputProps) => {
   const [inputValue, setInputValue] = React.useState('');
   const [extractedId, setExtractedId] = React.useState<string | null>(null);
 
@@ -69,4 +69,3 @@ function SheetUrlInput({ onIdChange, value }: SheetUrlInputProps) {
   );
 }
 
-export { SheetUrlInput };
