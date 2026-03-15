@@ -1,4 +1,4 @@
-import { TransactionPage } from '@/components/transaction-page';
+import { TransactionPage } from '@/components/TransactionPage';
 
 export function App() {
   return <TransactionPage />;

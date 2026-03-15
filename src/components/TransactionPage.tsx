@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
-import { ConnectButton } from '@/components/connect-button';
-import { SheetUrlInput } from '@/components/sheet-url-input';
-import { TransactionTable } from '@/components/transaction-table';
+import { ConnectButton } from '@/components/ConnectButton';
+import { SheetUrlInput } from '@/components/SheetUrlInput';
+import { TransactionTable } from '@/components/TransactionTable';
 import { Button } from '@/components/ui/button';
-import { useGoogleSheets } from '@/hooks/use-google-sheets';
+import { useGoogleSheets } from '@/hooks/useGoogleSheets';
 
 function TransactionPage() {
   const [sheetId, setSheetId] = useState<string | null>(null);
