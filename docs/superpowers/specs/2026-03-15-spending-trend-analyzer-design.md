@@ -1,13 +1,28 @@
 # Spending Trend Analyzer — Design Spec
 
 **Date:** 2026-03-15
-**Status:** Approved
+**Status:** In Progress
 
 ---
 
 ## Overview
 
 A personal finance dashboard built on top of the existing Monzo Google Sheets integration. The app reads transaction history from a Monzo export spreadsheet and visualises spending trends, category breakdowns, and budget progress. Designed for personal use but shareable with others.
+
+---
+
+## Current State (as of 2026-03-16)
+
+The following work was completed after this spec was written:
+
+**Done — hook separation (Phase 1):**
+- `src/hooks/useGoogleAuth.ts` — created; exports `{ token, signIn, signOut, loading, error }`; OAuth scope is currently `spreadsheets.readonly` (**needs to change to `spreadsheets`** per the OAuth Scope section below)
+- `src/hooks/useGoogleSheets.ts` — intermediate rewrite; takes `(token: string | null, spreadsheetId: string | null)` as parameters and returns `{ data, loading, error }`; no `refetch`, no localStorage reading yet
+- `src/components/TransactionPage.tsx` — updated to use both hooks separately; `sheetId` managed via local `useState` + `SheetUrlInput`
+
+**Not started — everything else in this spec.**
+
+The next phase is to introduce `AuthProvider`, `DataProvider`, routing, and all views. `useGoogleAuth.ts` and `TransactionPage.tsx` will be deleted as part of that work.
 
 ---
 
@@ -37,7 +52,7 @@ The single `useGoogleLogin` call (inside `AuthProvider`) requests scope:
 https://www.googleapis.com/auth/spreadsheets
 ```
 
-This replaces the existing `spreadsheets.readonly` scope. Read-write is required because `useBudgetSheet` performs PUT/clear operations on the budgets sheet.
+This replaces the existing `spreadsheets.readonly` scope (currently used in `useGoogleAuth.ts`). Read-write is required because `useBudgetSheet` performs PUT/clear operations on the budgets sheet.
 
 ---
 
@@ -57,7 +72,7 @@ router (defined in src/router.tsx):
   All routes render inside a shared Layout component (sidebar + <Outlet />)
 ```
 
-`App.tsx` is deleted. Its content (currently `<TransactionPage>`) is replaced by the router + Layout. `TransactionPage` is deleted; its responsibilities are split across `/overview` (connect flow, now in Settings) and `/transactions`.
+`App.tsx` is deleted. Its content (currently `<TransactionPage>`) is replaced by the router + Layout. `TransactionPage` is deleted; its responsibilities are split across `/overview` (connect flow, now in Settings) and `/transactions`. `useGoogleAuth.ts` is also deleted — its login logic is absorbed directly into `AuthProvider`.
 
 ---
 
@@ -100,7 +115,7 @@ interface DataContextValue {
 
 ## Hooks
 
-### `useGoogleSheets` (rewritten — replaces existing implementation entirely)
+### `useGoogleSheets` (second rewrite — replaces the intermediate `(token, spreadsheetId)` implementation)
 
 Called inside `DataProvider`. Reads `localStorage['transactions-sheet-url']`, parses ID with `parseSpreadsheetId`, reads token from `AuthContext`.
 
