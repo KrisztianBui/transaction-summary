@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import type { MonzoTransaction } from '@/types/monzo';
 
@@ -31,101 +31,52 @@ const rowToTransaction = (row: string[]): MonzoTransaction => ({
   moneyIn: row[17] ?? '',
 });
 
-export const useGoogleSheets = (
-  token: string | null,
-  spreadsheetId: string | null
-) => {
-  const [data, setData] = useState<MonzoTransaction[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const fetchSheetData = async (
+  token: string,
+  spreadsheetId: string,
+  signal: AbortSignal
+): Promise<MonzoTransaction[]> => {
+  const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}`;
+  const headers = { Authorization: `Bearer ${token}` };
 
-  useEffect(() => {
-    if (!token) {
-      setData(null);
-      setError(null);
-      setLoading(false);
-      return;
-    }
+  const metaResponse = await fetch(`${baseUrl}?fields=sheets.properties.title`, {
+    headers,
+    signal,
+  });
 
-    // Defensive: if spreadsheetId is cleared while token is held, reset state
-    // so no stale data or error persists (e.g. user clears the URL input)
-    if (!spreadsheetId) {
-      setData(null);
-      setError(null);
-      setLoading(false);
-      return;
-    }
+  if (metaResponse.status === 401) throw new Error('Session expired. Please reconnect.');
+  if (!metaResponse.ok)
+    throw new Error(`Failed to fetch sheet: ${metaResponse.status} ${metaResponse.statusText}`);
 
-    const controller = new AbortController();
-    const { signal } = controller;
+  const meta = (await metaResponse.json()) as SpreadsheetMetadata;
+  const sheetName = meta.sheets[meta.sheets.length - 1]?.properties.title ?? 'Sheet1';
 
-    const fetchSheet = async (): Promise<void> => {
-      setData(null);
-      setLoading(true);
-      setError(null);
+  const valuesResponse = await fetch(`${baseUrl}/values/${encodeURIComponent(sheetName)}`, {
+    headers,
+    signal,
+  });
 
-      const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}`;
-      const headers = { Authorization: `Bearer ${token}` };
+  if (valuesResponse.status === 401) throw new Error('Session expired. Please reconnect.');
+  if (!valuesResponse.ok)
+    throw new Error(
+      `Failed to fetch sheet: ${valuesResponse.status} ${valuesResponse.statusText}`
+    );
 
-      try {
-        const metaResponse = await fetch(
-          `${baseUrl}?fields=sheets.properties.title`,
-          { headers, signal }
-        );
+  const json = (await valuesResponse.json()) as SheetsApiResponse;
+  return (json.values ?? []).slice(1).map(rowToTransaction);
+};
 
-        if (metaResponse.status === 401) {
-          setError('Session expired. Please reconnect.');
-          setLoading(false);
-          return;
-        }
+export const useGoogleSheets = (token: string | null, spreadsheetId: string | null) => {
+  const { data, isFetching, error } = useQuery({
+    queryKey: ['sheets', token, spreadsheetId],
+    queryFn: ({ signal }) => fetchSheetData(token!, spreadsheetId!, signal),
+    enabled: !!token && !!spreadsheetId,
+    retry: false,
+  });
 
-        if (!metaResponse.ok) {
-          setError(`Failed to fetch sheet: ${metaResponse.status} ${metaResponse.statusText}`);
-          setLoading(false);
-          return;
-        }
-
-        const meta = (await metaResponse.json()) as SpreadsheetMetadata;
-        const sheetName =
-          meta.sheets[meta.sheets.length - 1]?.properties.title ?? 'Sheet1';
-
-        const valuesResponse = await fetch(
-          `${baseUrl}/values/${encodeURIComponent(sheetName)}`,
-          { headers, signal }
-        );
-
-        if (valuesResponse.status === 401) {
-          setError('Session expired. Please reconnect.');
-          setLoading(false);
-          return;
-        }
-
-        if (!valuesResponse.ok) {
-          setError(
-            `Failed to fetch sheet: ${valuesResponse.status} ${valuesResponse.statusText}`
-          );
-          setLoading(false);
-          return;
-        }
-
-        const json = (await valuesResponse.json()) as SheetsApiResponse;
-        const rows = json.values ?? [];
-        setData(rows.slice(1).map(rowToTransaction));
-        setLoading(false);
-      } catch (err) {
-        if ((err as Error).name === 'AbortError') return;
-        const message = err instanceof Error ? err.message : 'Unknown network error';
-        setError(`Network error: ${message}`);
-        setLoading(false);
-      }
-    };
-
-    void fetchSheet();
-
-    return () => {
-      controller.abort();
-    };
-  }, [token, spreadsheetId]);
-
-  return { data, loading, error };
+  return {
+    data: data ?? null,
+    loading: isFetching,
+    error: error?.message ?? null,
+  };
 };
